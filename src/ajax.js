@@ -296,20 +296,33 @@ jQuery.extend({
 			if ( !jsonp ) {
 				var done = false;
 
-				// Attach handlers for all browsers
-				script.onload = script.onreadystatechange = function() {
+				var handler = function(success) {
 					if ( !done && (!this.readyState ||
 							this.readyState === "loaded" || this.readyState === "complete") ) {
 						done = true;
-						jQuery.ajax.handleSuccess( s, xhr, status, data );
+						if (success) {
+							jQuery.ajax.handleSuccess( s, xhr, status, data );
+						} else {
+							// TODO are these the right params?  What should the error message be?
+							jQuery.handleError( s, xhr, status );
+						}
 						jQuery.ajax.handleComplete( s, xhr, status, data );
 
 						// Handle memory leak in IE
-						script.onload = script.onreadystatechange = null;
+						script.onload = script.onreadystatechange = script.onerror = null;
 						if ( head && script.parentNode ) {
 							head.removeChild( script );
 						}
 					}
+				};
+
+				// Attach handlers for all browsers
+				script.onload = script.onreadystatechange = function () {
+					handler(true);
+				};
+			    
+				script.onerror = function () {
+					handler(false);
 				};
 			}
 
